@@ -1,0 +1,2 @@
+include ':app'
+rootProject.name='visited_places_app'
