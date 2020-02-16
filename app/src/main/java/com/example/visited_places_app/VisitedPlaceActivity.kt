@@ -13,6 +13,7 @@ import android.os.Build
 import android.provider.MediaStore
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
+import com.example.visited_places_app.database.DatabaseHelper
 import kotlinx.android.synthetic.main.content_visited_place.*
 import java.io.Serializable
 import com.example.visited_places_app.model.VisitedPlace
@@ -21,7 +22,7 @@ import com.example.visited_places_app.model.VisitedPlace
 class VisitedPlaceActivity : AppCompatActivity() {
     private val PERMISSION_CODE = 1000
     private val IMAGE_CAPTURE_CODE = 1001
-    private var visitedPlace: VisitedPlace? = null
+    private lateinit var visitedPlace: VisitedPlace
 
     var image_uri: Uri? = null
 
@@ -32,8 +33,8 @@ class VisitedPlaceActivity : AppCompatActivity() {
 
         btAddImage.setText("Add image")
         visitedPlace = intent.getSerializableExtra("VisitedPlace") as VisitedPlace
-        if (visitedPlace != null && visitedPlace?.GetImage() != null) {
-            imageView.setImageURI(Uri.parse(visitedPlace?.GetImage()))
+        if (visitedPlace.GetImage() != null) {
+            imageView.setImageURI(Uri.parse(visitedPlace.GetImage()))
             btAddImage.setText("Change image")
         }
 
@@ -99,7 +100,7 @@ class VisitedPlaceActivity : AppCompatActivity() {
         if (resultCode == RESULT_OK) {
             //set image captured to image view
             imageView.setImageURI(image_uri)
-            visitedPlace?.SetImage(image_uri.toString())
+            visitedPlace.SetImage(image_uri.toString())
             btAddImage.setText("Change image")
         }
     }
@@ -142,8 +143,14 @@ class VisitedPlaceActivity : AppCompatActivity() {
     }
 
     private fun finishActivity() {
+        DatabaseHelper.updateData(visitedPlace)
         this.intent.putExtra("VisitedPlace", visitedPlace)
         this.setResult(RESULT_OK, this.intent)
         this.finish()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        DatabaseHelper.closeDatabase()
     }
 }
