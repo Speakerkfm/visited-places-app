@@ -1,9 +1,16 @@
 package com.example.visited_places_app
 
 import android.app.Activity
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.graphics.Color
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.widget.Toast
+import androidx.core.app.ActivityCompat
 import com.example.visited_places_app.database.DatabaseHelper
 
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -19,8 +26,8 @@ import java.io.Serializable
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var mMap: GoogleMap
     private val CHANGE_PLACE_REQUEST = 1
+    private val PERMISSION_CODE = 1000
     private var visitedPlaces: HashMap<LatLng, VisitedPlace> = HashMap()
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,6 +38,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
         visitedPlaces = DatabaseHelper.getAllData()
+
+        checkGPSPermission()
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
@@ -84,5 +93,39 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     override fun onDestroy() {
         super.onDestroy()
         DatabaseHelper.closeDatabase()
+    }
+
+    fun checkGPSPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_DENIED
+            ) {
+                //permission was not enabled
+                val permission = arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION)
+                //show popup to request permission
+                ActivityCompat.requestPermissions(this, permission, PERMISSION_CODE)
+            } else {
+                startService(Intent(applicationContext, PlacesCheckerService::class.java))
+            }
+        } else {
+            startService(Intent(applicationContext, PlacesCheckerService::class.java))
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        //called when user presses ALLOW or DENY from Permission Request Popup
+        when (requestCode) {
+            PERMISSION_CODE -> {
+                if (grantResults.size <= 0 || grantResults[0] != PackageManager.PERMISSION_GRANTED
+                ) {
+                    //permission from popup was denied
+                    Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
 }

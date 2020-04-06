@@ -112,7 +112,7 @@ class DatabaseHelper(ctx: Context) :
             }
             return database.delete(
                 DatabaseCreds.DATABASE_TABLE,
-                "${DatabaseCreds.ROW_ID} = $id",
+                "${DatabaseCreds.ROW_ID} = '$id'",
                 null
             )
         }
